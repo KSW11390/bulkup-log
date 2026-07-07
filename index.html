@@ -24,7 +24,7 @@
 
   /* week strip */
   .weekbar{padding:6px 16px 10px;}
-  .weekhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; padding:0 4px;}
+  .weekhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding:0 4px;}
   .weekhead .wlabel{font-size:17px; font-weight:800; letter-spacing:-0.3px;}
   .weekhead .wlabel small{color:var(--sub); font-weight:600; font-size:12px; margin-left:6px;}
   .weekhead .wlabel{background:none; border:none; padding:0; text-align:left;
@@ -46,15 +46,15 @@
   .dot.w{background:var(--accent);}
   .dot.d{background:var(--accent2);}
 
-  main{padding:4px 16px;}
-  .card{background:var(--card); border:none; border-radius:20px;
-    padding:18px 16px; margin-bottom:12px;}
-  .card h3{margin:0 0 10px; font-size:15px;}
-  .sub{color:var(--sub); font-size:12.5px;}
+  main{padding:6px 16px 0; display:grid; grid-template-columns:1fr; gap:12px; align-items:start;}
+  main > *{min-width:0;}
+  .card{background:var(--card); border:none; border-radius:20px; padding:20px 18px;}
+  .card h3{margin:0 0 14px; font-size:15px;}
+  .sub{color:var(--sub); font-size:12.5px; line-height:1.55;}
   .empty{color:var(--sub); text-align:center; padding:24px 0; font-size:14px;}
 
   /* day type picker */
-  .daygrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .daygrid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .daybtn{background:var(--card); border:none; border-radius:18px;
     padding:14px 12px; text-align:left; color:var(--text);}
   .mode{font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; display:inline-block; margin-bottom:6px;}
@@ -65,12 +65,11 @@
 
   /* today's recommended routine */
   .reco{background:linear-gradient(150deg, #17233c 0%, var(--card) 65%);}
-  .reco .day{font-size:12px; font-weight:700; color:var(--blue); margin-bottom:8px;}
-  .reco .nm{font-size:23px; font-weight:800; letter-spacing:-0.4px; margin:2px 0 4px;}
+  .reco .day{font-size:12px; font-weight:700; color:var(--blue); margin-bottom:10px;}
+  .reco .nm{font-size:23px; font-weight:800; letter-spacing:-0.4px; margin:4px 0 6px;}
   .reco .btn, .reco .btn.full{margin-top:24px;}
-  details.altpick{margin-bottom:12px;}
   details.altpick summary{list-style:none; color:var(--sub); font-size:13px; font-weight:600;
-    padding:12px 4px; cursor:pointer; text-align:center;}
+    padding:14px 4px; cursor:pointer; text-align:center;}
   details.altpick summary::-webkit-details-marker{display:none;}
   details.altpick[open] summary{color:var(--text);}
 
@@ -79,10 +78,10 @@
   .exhead .nm{font-weight:700; font-size:15px; flex:1;}
   .exsum{color:var(--sub); font-size:12px; white-space:nowrap;}
   .xbtn{background:none; border:none; color:var(--sub); font-size:16px; padding:6px;}
-  .last{font-size:12px; color:var(--sub); margin:4px 0 8px;}
+  .last{font-size:12px; color:var(--sub); margin:6px 0 12px;}
   .last b{color:var(--blue); font-weight:600;}
-  .sets{margin:2px 0 10px;}
-  .setline{display:flex; align-items:center; gap:12px; padding:7px 2px; border-bottom:1px solid var(--line);}
+  .sets{margin:4px 0 14px;}
+  .setline{display:flex; align-items:center; gap:12px; padding:10px 2px; border-bottom:1px solid var(--line);}
   .setline:last-child{border-bottom:none;}
   .sno{flex:none; width:26px; height:26px; border-radius:8px; background:var(--card2);
     color:var(--sub); font-size:12px; font-weight:700;
@@ -105,24 +104,25 @@
   .btn{background:var(--accent); border:none; color:#fff; font-weight:700;
     border-radius:14px; padding:13px 16px; font-size:14px;}
   .btn.ghost{background:var(--card2); color:var(--text); border:none; font-weight:600;}
-  .btn.full{width:100%; margin-top:4px;}
+  .btn.full{width:100%; margin-top:10px;}
+  main > .btn.full{margin-top:0;}
   .btn.green{background:rgba(49,130,246,.13); color:var(--blue);}
 
-  .sessionbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .sessionbar{display:flex; align-items:center; justify-content:space-between; padding:2px 4px;}
   .sessionbar .tag{font-size:13px; font-weight:700;}
   .sessionbar .tag em{font-style:normal; color:var(--accent);}
   .vol{font-size:12.5px; color:var(--sub);}
   .vol b{color:var(--text);}
 
   /* diet */
-  .totrow{display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px;}
-  .bar{height:8px; background:var(--card2); border-radius:99px; overflow:hidden; margin-bottom:12px;}
+  .totrow{display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:8px;}
+  .bar{height:8px; background:var(--card2); border-radius:99px; overflow:hidden; margin-bottom:16px;}
   .bar i{display:block; height:100%; border-radius:99px; transition:width .2s;}
-  .mealrow{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .mealrow{display:flex; align-items:center; gap:8px; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px;}
   .mealrow:last-of-type{border-bottom:none;}
   .mealrow .mn{flex:1;}
   .mealrow .mv{color:var(--sub); font-size:12.5px; white-space:nowrap;}
-  .addrow{display:flex; gap:6px; margin-top:10px;}
+  .addrow{display:flex; gap:8px; margin-top:14px;}
   .addrow input{min-width:0; background:var(--card2); border:none;
     color:var(--text); border-radius:14px; padding:12px 10px; font-size:15px;}
   .addrow input.nm{flex:2;} .addrow input.num{flex:1; text-align:center;}
@@ -134,7 +134,7 @@
   .seg{display:flex; background:var(--card2); border:none;
     border-radius:14px; overflow:hidden; margin-bottom:12px; padding:3px;}
   .seg button{border-radius:11px;}
-  .seg button{flex:1; background:none; border:none; color:var(--sub); padding:10px 4px; font-size:13px; font-weight:600;}
+  .seg button{flex:1; background:none; border:none; color:var(--sub); padding:11px 4px; font-size:13px; font-weight:600;}
   .seg button.on{background:var(--accent); color:#fff;}
   svg{width:100%; height:auto; display:block;}
   .hist{font-size:13px; padding:8px 0; border-bottom:1px solid var(--line);}
@@ -153,6 +153,29 @@
   nav button.on{color:var(--accent);}
 
   .rownav{display:flex; gap:8px; margin-bottom:12px;}
+
+  /* responsive */
+  @media (max-width:360px){
+    .card{padding:16px 14px;}
+    .setline{gap:8px;}
+    .sw{min-width:62px;}
+    .sr{min-width:44px;}
+    .wd .num{width:32px; height:32px; font-size:14px;}
+  }
+  @media (min-width:700px){
+    body{max-width:768px;}
+    nav{max-width:768px;}
+    header{padding:28px 28px 8px;}
+    header h1{font-size:24px;}
+    .weekbar{padding:10px 28px 16px;}
+    .weekhead .wlabel{font-size:19px;}
+    .wd .num{width:42px; height:42px; font-size:16px;}
+    main{grid-template-columns:1fr 1fr; gap:16px; padding:10px 28px 0;}
+    main > .sessionbar, main > .reco, main > details.altpick,
+    main > .btn.full, main > .card:only-child{grid-column:1 / -1;}
+    .daygrid{grid-template-columns:repeat(3,1fr);}
+    .reco .nm{font-size:26px;}
+  }
 </style>
 </head>
 <body>
