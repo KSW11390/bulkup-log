@@ -96,6 +96,23 @@
   .cmp.dn{color:var(--danger);}
   .cmp.eq{color:var(--sub);}
   .setline .xbtn{margin-left:auto;}
+  .restrow{display:flex; align-items:center; gap:8px; margin:12px 0; color:var(--sub); font-size:13px;}
+  .restrow input{width:74px; background:var(--card2); border:0; color:var(--text); border-radius:10px; padding:9px; text-align:center; font-size:14px;}
+  .reststatus{margin-left:auto; text-align:right; color:var(--blue); font-weight:700; font-variant-numeric:tabular-nums;}
+  .reststatus.ready{color:var(--accent2);}
+  .exercise-picker select{margin:0 0 8px;}
+  .routine-field{width:100%; background:var(--card2); border:0; color:var(--text); border-radius:14px; padding:13px; font-size:16px; font-weight:700;}
+  .routine-list{margin:12px 0;}
+  .routine-item{display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); font-size:14px;}
+  .routine-item .name{flex:1; min-width:0; overflow-wrap:anywhere;}
+  .routine-item .xbtn{font-size:14px;}
+  .routine-item .xbtn:disabled{opacity:.25;}
+  .routine-editor h3{margin-bottom:8px;}
+  .routine-editor .sub{margin-bottom:12px;}
+  .routine-actions{display:flex; gap:8px; margin-top:12px;}
+  .routine-actions .btn{flex:1;}
+
+  .exercise-picker .addrow{margin-top:8px;}
   .setrow{display:flex; gap:8px;}
   .setrow input{flex:1; min-width:0; background:var(--card2); border:none;
     color:var(--text); border-radius:14px; padding:13px 10px; font-size:16px; text-align:center;
@@ -211,7 +228,7 @@ const DAY_TYPES = [
 ];
 
 let db = load();
-let cur = { date: todayStr(), tab: 'workout', chartEx: '', metric: 'top' };
+let cur = { date: todayStr(), tab: 'workout', chartEx: '', metric: 'top', pickingExercise: false, routineEditor: null };
 
 function load(){
   try{
@@ -245,7 +262,13 @@ function setTab(t){ cur.tab = t; render(); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function n1(x){ return Math.round(x*10)/10; }
 function comma(x){ return Math.round(x).toLocaleString('ko-KR'); }
-function dayLabel(dt){ const t = DAY_TYPES.find(d=>d.id===dt); return t ? t.name+' · '+t.mode : ''; }
+function routineTypes(){
+  return DAY_TYPES.map(t=>{
+    const custom = (db.routines || {})[t.id];
+    return custom ? {...t, name:custom.name, preset:custom.preset} : t;
+  });
+}
+function dayLabel(dt){ const t = routineTypes().find(d=>d.id===dt); return t ? t.name+' · '+t.mode : ''; }
 
 /* ---------- render ---------- */
 function renderWeekbar(){
@@ -291,6 +314,7 @@ function render(){
 
 /* ---------- workout ---------- */
 function viewWorkout(){
+  if(cur.routineEditor) return viewRoutineEditor();
   const log = db.logs[cur.date];
   if(!log){
     const wd = new Date(cur.date+'T12:00:00').getDay(); // 0=일 … 6=토
@@ -303,32 +327,33 @@ function viewWorkout(){
         + '<div class="sub">한 주 수고했어요. 잘 먹고 잘 자는 것도 벌크업입니다</div>'
         + '<button class="btn green full" onclick="pickRest()">휴식일로 기록</button></div>';
     }else{
-      const t = DAY_TYPES[wd-1]; // 월=d1 → 토=d6
+      const t = routineTypes()[wd-1]; // 월=d1 → 토=d6
       reco = '<div class="card reco">'
         + '<div class="day">'+wdName+'요일 루틴</div>'
         + '<span class="mode '+(t.mode==='스트렝스'?'str':'hyp')+'">'+t.mode+'</span>'
-        + '<div class="nm">'+t.name+'</div>'
+        + '<div class="nm">'+esc(t.name)+'</div>'
         + '<div class="sub">'+t.rep+'</div>'
-        + '<div class="sub" style="margin-top:8px">'+t.preset.join(' · ')+'</div>'
+        + '<div class="sub" style="margin-top:8px">'+t.preset.map(esc).join(' · ')+'</div>'
         + '<button class="btn full" onclick="pickDay(\''+t.id+'\')">이 루틴으로 시작</button></div>';
     }
     return reco
       + '<details class="altpick"><summary>다른 분할로 하기 ▾</summary>'
       + '<div class="daygrid">'
-      + DAY_TYPES.map(t=>
+      + routineTypes().map(t=>
           '<button class="daybtn" onclick="pickDay(\''+t.id+'\')">'
           + '<span class="mode '+(t.mode==='스트렝스'?'str':'hyp')+'">'+t.mode+'</span>'
-          + '<div class="nm">'+t.name+'</div>'
+          + '<div class="nm">'+esc(t.name)+'</div>'
           + '<div class="rep">'+t.rep+'</div></button>').join('')
       + '</div>'
       + (wd!==0 ? '<button class="btn ghost full" style="margin-top:12px" onclick="pickRest()">휴식일 🛌</button>' : '')
-      + '</details>';
+      + '</details><button class="btn ghost full" onclick="openRoutineEditor()">루틴 편집</button>';
   }
   if(log.rest){
     return '<div class="card"><div class="empty">오늘은 휴식일 🛌<br><span class="sub">잘 먹고 잘 자는 것도 벌크업입니다</span></div>'
-      + '<button class="btn ghost full" onclick="resetDay()">운동으로 변경</button></div>';
+      + '<button class="btn ghost full" onclick="resetDay()">운동으로 변경</button></div>'
+      + '<button class="btn ghost full" onclick="openRoutineEditor()">루틴 편집</button>';
   }
-  const t = DAY_TYPES.find(x=>x.id===log.dayType);
+  const t = routineTypes().find(x=>x.id===log.dayType);
   const totalVol = log.exercises.reduce((a,ex)=>a+exVol(ex),0);
   let html = '<div class="sessionbar">'
     + '<div class="tag"><em>'+esc(t.name)+'</em> · '+t.mode+'<div class="sub">'+t.rep+'</div></div>'
@@ -361,6 +386,9 @@ function viewWorkout(){
                 + '<button class="xbtn" onclick="delSet('+i+','+j+')">✕</button></div>';
             }).join('')
           + '</div>' : '')
+      + '<div class="restrow"><label for="rest'+i+'">휴식</label>'
+      + '<input id="rest'+i+'" type="number" inputmode="numeric" min="0" max="86400" value="'+(ex.restSeconds || 0)+'" onchange="setRest('+i+',this.value)" aria-label="'+esc(ex.name)+' 휴식 시간(초)"> 초'
+      + '<span class="reststatus" id="timer'+i+'" role="status">'+timerText(ex)+'</span></div>'
       + '<div class="setrow">'
       + '<input id="w'+i+'" type="number" inputmode="decimal" step="0.5" placeholder="'+(g?g.w:'kg')+'" data-g="'+(g?g.w:'')+'">'
       + '<input id="r'+i+'" type="number" inputmode="numeric" placeholder="'+(g?g.r:'회')+'" data-g="'+(g?g.r:'')+'">'
@@ -368,9 +396,77 @@ function viewWorkout(){
       + '</div></div>';
   }).join('');
 
-  html += '<button class="btn ghost full" onclick="addEx()">＋ 운동 추가</button>'
+  html += (cur.pickingExercise ? exercisePicker(log) : '<button class="btn ghost full" onclick="cur.pickingExercise=true; render()">＋ 운동 추가</button>')
+    + '<button class="btn ghost full" onclick="openRoutineEditor(\''+log.dayType+'\')">루틴 편집</button>'
     + '<button class="btn ghost full" style="color:var(--danger)" onclick="resetDay()">분할 다시 선택</button>';
   return html;
+}
+function openRoutineEditor(id){
+  const t = routineTypes().find(x=>x.id===id) || routineTypes()[0];
+  cur.routineEditor = {id:t.id, name:t.name, preset:[...t.preset]};
+  render();
+}
+function viewRoutineEditor(){
+  const draft = cur.routineEditor;
+  const types = routineTypes();
+  const selected = types.find(t=>t.id===draft.id);
+  const names = exerciseNames();
+  return '<div class="card routine-editor"><h3>루틴 편집</h3>'
+    + '<div class="sub">루틴을 선택하고 이름과 운동 구성을 바꿔보세요. 변경 사항은 다음에 루틴을 시작할 때 적용됩니다.</div>'
+    + '<select aria-label="편집할 루틴" onchange="switchRoutine(this.value)">'
+    + types.map(t=>'<option value="'+t.id+'"'+(t.id===draft.id?' selected':'')+'>'+esc(t.name)+' · '+t.mode+'</option>').join('')
+    + '</select><div class="last">루틴 이름 · '+selected.mode+'</div>'
+    + '<input class="routine-field" id="routine-name" maxlength="80" aria-label="루틴 이름" value="'+esc(draft.name)+'" oninput="cur.routineEditor.name=this.value">'
+    + '<div class="last" style="margin-top:18px">구성 운동 · '+draft.preset.length+'개</div>'
+    + '<div class="routine-list">'+(draft.preset.length ? draft.preset.map((name,i)=>
+        '<div class="routine-item"><span class="sno">'+(i+1)+'</span><span class="name">'+esc(name)+'</span>'
+        + '<button class="xbtn" aria-label="'+esc(name)+' 위로 이동" onclick="moveRoutineExercise('+i+',-1)"'+(i===0?' disabled':'')+'>↑</button>'
+        + '<button class="xbtn" aria-label="'+esc(name)+' 아래로 이동" onclick="moveRoutineExercise('+i+',1)"'+(i===draft.preset.length-1?' disabled':'')+'>↓</button>'
+        + '<button class="xbtn" aria-label="'+esc(name)+' 삭제" onclick="removeRoutineExercise('+i+')">✕</button></div>').join('')
+      : '<div class="empty">운동을 추가해주세요</div>')+'</div>'
+    + '<select id="routine-exercise-choice" aria-label="추가할 운동">'
+    + names.map((name,i)=>'<option value="'+i+'">'+esc(name)+'</option>').join('')+'</select>'
+    + '<button class="btn green full" onclick="addRoutineExercise()">＋ 선택한 운동 추가</button>'
+    + '<div class="addrow"><input class="nm" id="routine-new-exercise" maxlength="80" placeholder="새 운동 이름" aria-label="새 운동 이름">'
+    + '<button class="btn ghost" onclick="addNewRoutineExercise()">추가</button></div>'
+    + '<div class="routine-actions"><button class="btn ghost" onclick="cur.routineEditor=null; render()">취소</button>'
+    + '<button class="btn" onclick="saveRoutine()">루틴 저장</button></div></div>';
+}
+function switchRoutine(id){
+  const draft = cur.routineEditor;
+  const original = routineTypes().find(t=>t.id===draft.id);
+  if((draft.name!==original.name || JSON.stringify(draft.preset)!==JSON.stringify(original.preset))
+    && !confirm('저장하지 않은 변경 사항을 버리고 다른 루틴을 선택할까요?')){ render(); return; }
+  openRoutineEditor(id);
+}
+function addRoutineExercise(){
+  const name = exerciseNames()[Number(document.getElementById('routine-exercise-choice').value)];
+  if(!name) return;
+  if(cur.routineEditor.preset.includes(name)){ alert('이미 구성에 있는 운동입니다'); return; }
+  cur.routineEditor.preset.push(name); render();
+}
+function addNewRoutineExercise(){
+  const name = document.getElementById('routine-new-exercise').value.trim();
+  if(!name){ alert('운동 이름을 입력해주세요'); return; }
+  if(cur.routineEditor.preset.some(n=>n.toLocaleLowerCase()===name.toLocaleLowerCase())){ alert('이미 구성에 있는 운동입니다'); return; }
+  const existing = exerciseNames().find(n=>n.toLocaleLowerCase()===name.toLocaleLowerCase());
+  cur.routineEditor.preset.push(existing || name); render();
+}
+function removeRoutineExercise(i){ cur.routineEditor.preset.splice(i,1); render(); }
+function moveRoutineExercise(i, direction){
+  const list = cur.routineEditor.preset, target = i+direction;
+  if(target<0 || target>=list.length) return;
+  [list[i],list[target]] = [list[target],list[i]]; render();
+}
+function saveRoutine(){
+  const draft = cur.routineEditor, name = draft.name.trim();
+  if(!name){ alert('루틴 이름을 입력해주세요'); return; }
+  if(!draft.preset.length){ alert('운동을 하나 이상 추가해주세요'); return; }
+  if(!db.routines) db.routines = {};
+  db.routines[draft.id] = {name:name, preset:[...draft.preset]};
+  if(!db.exerciseLibrary) db.exerciseLibrary = [];
+  draft.preset.forEach(ex=>{ if(!db.exerciseLibrary.includes(ex)) db.exerciseLibrary.push(ex); });
+  cur.routineEditor = null; save(); render();
 }
 function exVol(ex){ return ex.sets.reduce((a,s)=>a+s.w*s.r,0); }
 function setsText(sets){ return sets.map(s=>s.w+'×'+s.r).join(', '); }
@@ -392,8 +488,8 @@ function lastRecord(name, before){
   return null;
 }
 function pickDay(id){
-  const t = DAY_TYPES.find(x=>x.id===id);
-  db.logs[cur.date] = { dayType:id, exercises: t.preset.map(nm=>({name:nm, sets:[]})) };
+  const t = routineTypes().find(x=>x.id===id);
+  db.logs[cur.date] = { dayType:id, exercises: t.preset.map(nm=>({name:nm, sets:[], restSeconds:(db.exerciseRest || {})[nm] || 0})) };
   save(); render();
 }
 function pickRest(){ db.logs[cur.date] = {rest:true}; save(); render(); }
@@ -406,7 +502,10 @@ function addSet(i){
   const w = parseFloat(wEl.value !== '' ? wEl.value : wEl.dataset.g);
   const r = parseInt(rEl.value !== '' ? rEl.value : rEl.dataset.g);
   if(isNaN(w) || isNaN(r) || r<=0){ alert('중량과 횟수를 입력해주세요'); return; }
-  db.logs[cur.date].exercises[i].sets.push({w:w, r:r});
+  const ex = db.logs[cur.date].exercises[i];
+  ex.sets.push({w:w, r:r});
+  ex.restEndsAt = ex.restSeconds > 0 ? Date.now() + ex.restSeconds * 1000 : null;
+  ex.restNotified = false;
   save(); render();
 }
 function delSet(i,j){
@@ -415,11 +514,69 @@ function delSet(i,j){
   db.logs[cur.date].exercises[i].sets.splice(j,1);
   save(); render();
 }
-function addEx(){
-  const nm = prompt('운동 이름을 입력하세요');
-  if(!nm || !nm.trim()) return;
-  db.logs[cur.date].exercises.push({name:nm.trim(), sets:[]});
+function exerciseNames(){
+  const names = [...DAY_TYPES.flatMap(t=>t.preset), ...routineTypes().flatMap(t=>t.preset), ...(db.exerciseLibrary || [])];
+  Object.values(db.logs).forEach(log=>(log.exercises || []).forEach(ex=>names.push(ex.name)));
+  return [...new Set(names)].sort((a,b)=>a.localeCompare(b,'ko'));
+}
+function exercisePicker(log){
+  const names = exerciseNames();
+  return '<div class="card exercise-picker"><h3>운동 추가</h3>'
+    + '<select id="exercise-choice" aria-label="운동 선택">'
+    + names.map((name,i)=>'<option value="'+i+'">'+esc(name)+(log.exercises.some(ex=>ex.name===name) ? ' (추가됨)' : '')+'</option>').join('')
+    + '</select><button class="btn full" onclick="addSelectedExercise()">선택한 운동 추가</button>'
+    + '<div class="addrow"><input class="nm" id="new-exercise" maxlength="80" placeholder="새 운동 이름" aria-label="새 운동 이름">'
+    + '<button class="btn ghost" onclick="createExercise()">목록에 추가</button></div>'
+    + '<button class="btn ghost full" onclick="cur.pickingExercise=false; render()">닫기</button></div>';
+}
+function addSelectedExercise(){
+  const name = exerciseNames()[Number(document.getElementById('exercise-choice').value)];
+  if(!name) return;
+  const log = db.logs[cur.date];
+  if(log.exercises.some(ex=>ex.name===name)){ alert('이미 추가된 운동입니다'); return; }
+  log.exercises.push({name:name, sets:[], restSeconds:(db.exerciseRest || {})[name] || 0});
+  cur.pickingExercise = false; save(); render();
+}
+function createExercise(){
+  const name = document.getElementById('new-exercise').value.trim();
+  if(!name){ alert('운동 이름을 입력해주세요'); return; }
+  if(exerciseNames().some(n=>n.toLocaleLowerCase()===name.toLocaleLowerCase())){ alert('이미 목록에 있는 운동입니다'); return; }
+  if(!db.exerciseLibrary) db.exerciseLibrary = [];
+  db.exerciseLibrary.push(name); save(); render();
+  const names = exerciseNames();
+  document.getElementById('exercise-choice').value = String(names.indexOf(name));
+}
+function setRest(i, value){
+  const seconds = Number(value);
+  if(!Number.isInteger(seconds) || seconds < 0 || seconds > 86400){ alert('휴식 시간을 0~86400초로 입력해주세요'); render(); return; }
+  const ex = db.logs[cur.date].exercises[i];
+  ex.restSeconds = seconds;
+  if(!db.exerciseRest) db.exerciseRest = {};
+  db.exerciseRest[ex.name] = seconds;
+  if(!seconds) ex.restEndsAt = null;
   save(); render();
+}
+function timerText(ex){
+  if(!ex.restEndsAt) return '';
+  const seconds = Math.max(0, Math.ceil((ex.restEndsAt-Date.now())/1000));
+  return seconds ? '휴식 중 '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0') : '휴식 완료 · 다음 세트 시작';
+}
+function updateTimers(){
+  let changed = false;
+  Object.values(db.logs).forEach(log=>(log.exercises || []).forEach(ex=>{
+    if(ex.restEndsAt && Date.now() >= ex.restEndsAt && !ex.restNotified){
+      ex.restNotified = true; changed = true;
+      if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    }
+  }));
+  if(changed) save();
+  if(cur.tab !== 'workout') return;
+  const log = db.logs[cur.date];
+  if(!log || !log.exercises) return;
+  log.exercises.forEach((ex,i)=>{
+    const el = document.getElementById('timer'+i);
+    if(el){ el.textContent = timerText(ex); el.classList.toggle('ready', !!ex.restEndsAt && Date.now() >= ex.restEndsAt); }
+  });
 }
 function delEx(i){
   const ex = db.logs[cur.date].exercises[i];
@@ -621,6 +778,8 @@ function importData(input){
 }
 
 render();
+updateTimers();
+setInterval(updateTimers, 1000);
 </script>
 </body>
 </html>
